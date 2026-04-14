@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Аналитика магазина • Ozon + Wildberries</title>
+  <meta name="description" content="Внутренний инструмент для анализа продаж и экономики магазина на Ozon и Wildberries без backend." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero card">
+      <div class="hero-copy">
+        <div class="eyebrow">Внутренняя аналитика магазина</div>
+        <h1>Аналитика продаж и экономики<br />Ozon + Wildberries</h1>
+        <p>
+          Выберите месяц, переключите площадку, загрузите официальные отчёты и получите понятный
+          управленческий расклад без Excel-хаоса.
+        </p>
+      </div>
+
+      <div class="hero-controls">
+        <label class="control-card">
+          <span class="control-label">Месяц анализа</span>
+          <input id="analysisMonth" type="month" />
+        </label>
+
+        <div class="control-card control-card--wide">
+          <span class="control-label">Маркетплейс</span>
+          <div class="market-switch" id="marketSwitch">
+            <button type="button" class="market-btn" data-marketplace="ozon">Ozon</button>
+            <button type="button" class="market-btn" data-marketplace="wb">Wildberries</button>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <button id="buildAnalysisBtn" class="btn btn-primary" type="button">Построить анализ</button>
+          <button id="resetBtn" class="btn btn-secondary" type="button">Сбросить и загрузить заново</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="top-grid">
+      <section class="card section-card">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Шаг 1</div>
+            <h2>Какие отчёты нужны и где их взять</h2>
+          </div>
+        </div>
+        <div id="instructionCards" class="instruction-grid"></div>
+      </section>
+
+      <section class="card section-card">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Шаг 2</div>
+            <h2>Проверка готовности</h2>
+          </div>
+        </div>
+        <div id="validationList" class="validation-list"></div>
+        <div id="buildStatus" class="status-banner hidden"></div>
+      </section>
+    </section>
+
+    <section class="card section-card">
+      <div class="section-head section-head--compact">
+        <div>
+          <div class="section-eyebrow">Шаг 3</div>
+          <h2>Загрузка файлов</h2>
+        </div>
+      </div>
+      <div id="uploadCards" class="upload-grid"></div>
+    </section>
+
+    <section class="card section-card">
+      <div class="section-head">
+        <div>
+          <div class="section-eyebrow">Шаг 4</div>
+          <h2>Ручные затраты</h2>
+          <p class="section-note">
+            Этот блок нужен для расчёта экономики после себестоимости. Если его не заполнять,
+            приложение покажет экономику только на уровне маркетплейса.
+          </p>
+        </div>
+      </div>
+
+      <div class="manual-defaults" id="manualDefaults"></div>
+
+      <div class="manual-toolbar">
+        <div class="search-wrap">
+          <input id="manualCostSearch" type="search" placeholder="Поиск SKU или товара" />
+        </div>
+        <div class="manual-hint" id="manualHint">Загрузите файлы, чтобы увидеть товары для ручного ввода.</div>
+      </div>
+
+      <div class="table-wrap table-wrap--manual">
+        <table class="data-table data-table--manual" id="manualCostTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="resultsSection" class="card section-card hidden">
+      <div class="section-head section-head--results">
+        <div>
+          <div class="section-eyebrow">Шаг 5</div>
+          <h2>Результаты анализа</h2>
+          <p class="section-note" id="resultsSubtitle"></p>
+        </div>
+
+        <div class="results-actions">
+          <button id="copySummaryBtn" class="btn btn-secondary" type="button">Скопировать сводку</button>
+          <button id="exportCsvBtn" class="btn btn-secondary" type="button">Экспорт товаров в CSV</button>
+        </div>
+      </div>
+
+      <div id="availabilityGrid" class="availability-grid"></div>
+
+      <div id="kpiGrid" class="kpi-grid"></div>
+
+      <div class="charts-grid">
+        <section class="chart-card">
+          <div class="chart-head">
+            <h3>Динамика внутри месяца</h3>
+            <p>Чистая выручка по дням выбранного месяца</p>
+          </div>
+          <div id="lineChart" class="chart-host"></div>
+        </section>
+
+        <section class="chart-card">
+          <div class="chart-head">
+            <h3>Структура расходов</h3>
+            <p>Расходы маркетплейса по категориям</p>
+          </div>
+          <div id="donutChart" class="chart-host"></div>
+        </section>
+
+        <section class="chart-card">
+          <div class="chart-head">
+            <h3>Топ товаров</h3>
+            <p>Лидеры по выручке</p>
+          </div>
+          <div id="barChart" class="chart-host"></div>
+        </section>
+      </div>
+
+      <div class="results-grid">
+        <section class="subcard">
+          <h3>Ключевые выводы</h3>
+          <ul id="insightsList" class="insight-list"></ul>
+        </section>
+
+        <section class="subcard">
+          <h3>Сводка по расходам</h3>
+          <div id="expenseBreakdown" class="expense-breakdown"></div>
+
+          <div class="divider"></div>
+
+          <h3>Слабые товары</h3>
+          <div id="weakProducts" class="weak-products"></div>
+        </section>
+      </div>
+
+      <div class="table-head">
+        <div>
+          <h3>Сводка по товарам</h3>
+          <p id="tableNote" class="section-note"></p>
+        </div>
+        <div class="search-wrap">
+          <input id="resultsProductSearch" type="search" placeholder="Фильтр по SKU или товару" />
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table" id="productTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="bottom-grid">
+      <section class="card section-card">
+        <div class="section-head section-head--compact">
+          <div>
+            <div class="section-eyebrow">Примечания</div>
+            <h2>Ограничения анализа</h2>
+          </div>
+        </div>
+        <div id="limitationsBlock" class="note-list"></div>
+      </section>
+
+      <section class="card section-card">
+        <div class="section-head section-head--compact">
+          <div>
+            <div class="section-eyebrow">Потом можно добавить</div>
+            <h2>Следующие улучшения</h2>
+          </div>
+        </div>
+        <ul class="roadmap-list">
+          <li>Импорт себестоимости из отдельного CSV по SKU.</li>
+          <li>Сравнение двух месяцев и план-факт по площадкам.</li>
+          <li>Сохранение нескольких сессий анализа в localStorage.</li>
+          <li>Режим сверки с бухгалтерскими закрывающими документами.</li>
+          <li>Распределение общих расходов по товарам по выбранной логике.</li>
+        </ul>
+      </section>
+    </footer>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
