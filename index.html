@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ozon • Аналитика магазина через вставку из Excel</title>
+  <meta name="description" content="Стабильная внутренняя аналитика Ozon через вставку таблиц из Excel. Без backend и без чтения xlsx в браузере." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero card">
+      <div class="hero-copy">
+        <div class="eyebrow">Внутренняя аналитика магазина</div>
+        <h1>Ozon • стабильный импорт<br />через вставку из Excel</h1>
+        <p>
+          Эта версия специально сделана без чтения исходных Excel-файлов в браузере.
+          Вместо загрузки файлов вы просто копируете нужный диапазон из Excel и вставляете его в карточку отчёта.
+          Для отчётов Ozon это заметно стабильнее: не ломается на служебных строках, merged header и нестандартных xlsx.
+        </p>
+      </div>
+
+      <div class="hero-controls">
+        <label class="control-card">
+          <span class="control-label">Месяц анализа</span>
+          <input id="analysisMonth" type="month" />
+        </label>
+
+        <div class="control-card control-card--wide">
+          <span class="control-label">Режим</span>
+          <div class="market-switch" id="marketSwitch">
+            <button type="button" class="market-btn active" data-marketplace="ozon">Ozon</button>
+          </div>
+          <div class="control-help">Сначала стабилизируем Ozon на вставке из Excel. Эту же архитектуру потом можно дотянуть и до Wildberries.</div>
+        </div>
+
+        <div class="hero-actions">
+          <button id="buildAnalysisBtn" class="btn btn-primary" type="button">Построить анализ</button>
+          <button id="resetBtn" class="btn btn-secondary" type="button">Сбросить всё</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="top-grid">
+      <section class="card section-card">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Шаг 1</div>
+            <h2>Как копировать данные из Excel</h2>
+          </div>
+        </div>
+        <div id="instructionCards" class="instruction-grid"></div>
+      </section>
+
+      <section class="card section-card">
+        <div class="section-head">
+          <div>
+            <div class="section-eyebrow">Шаг 2</div>
+            <h2>Проверка готовности</h2>
+          </div>
+        </div>
+        <div id="validationList" class="validation-list"></div>
+        <div id="buildStatus" class="status-banner hidden"></div>
+      </section>
+    </section>
+
+    <section class="card section-card">
+      <div class="section-head section-head--compact">
+        <div>
+          <div class="section-eyebrow">Шаг 3</div>
+          <h2>Вставка таблиц</h2>
+          <p class="section-note">
+            Вставляйте не отдельные разрозненные колонки, а прямоугольный диапазон таблицы из Excel:
+            заголовок + все нужные столбцы + строки данных.
+          </p>
+        </div>
+      </div>
+      <div id="uploadCards" class="upload-grid"></div>
+    </section>
+
+    <section class="card section-card">
+      <div class="section-head">
+        <div>
+          <div class="section-eyebrow">Шаг 4</div>
+          <h2>Ручные затраты</h2>
+          <p class="section-note">
+            Этот блок нужен для расчёта экономики после себестоимости. Если его не заполнять,
+            приложение покажет экономику на уровне маркетплейса и товарного вклада без внутренних затрат.
+          </p>
+        </div>
+      </div>
+
+      <div id="manualDefaults" class="manual-defaults"></div>
+
+      <div class="manual-toolbar">
+        <div class="search-wrap">
+          <input id="manualCostSearch" type="search" placeholder="Поиск SKU или товара" />
+        </div>
+        <div class="manual-hint" id="manualHint">Сначала вставьте отчёты — здесь появятся товары для ручного ввода.</div>
+      </div>
+
+      <div class="table-wrap table-wrap--manual">
+        <table class="data-table data-table--manual" id="manualCostTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="resultsSection" class="card section-card hidden">
+      <div class="section-head section-head--results">
+        <div>
+          <div class="section-eyebrow">Шаг 5</div>
+          <h2>Результаты анализа</h2>
+          <p class="section-note" id="resultsSubtitle"></p>
+        </div>
+
+        <div class="results-actions">
+          <button id="copySummaryBtn" class="btn btn-secondary" type="button">Скопировать сводку</button>
+          <button id="exportCsvBtn" class="btn btn-secondary" type="button">Экспорт товаров в CSV</button>
+        </div>
+      </div>
+
+      <div id="availabilityGrid" class="availability-grid"></div>
+      <div id="kpiGrid" class="kpi-grid"></div>
+
+      <div class="charts-grid">
+        <section class="chart-card">
+          <div class="chart-head">
+            <h3>Динамика внутри месяца</h3>
+            <p>Товарная выручка по дням месяца</p>
+          </div>
+          <div id="lineChart" class="chart-host"></div>
+        </section>
+
+        <section class="chart-card">
+          <div class="chart-head">
+            <h3>Структура расходов</h3>
+            <p>Расходы маркетплейса по категориям</p>
+          </div>
+          <div id="donutChart" class="chart-host"></div>
+        </section>
+
+        <section class="chart-card">
+          <div class="chart-head">
+            <h3>Топ товаров</h3>
+            <p>Лидеры по выручке</p>
+          </div>
+          <div id="barChart" class="chart-host"></div>
+        </section>
+      </div>
+
+      <div class="results-grid">
+        <section class="subcard">
+          <h3>Ключевые выводы</h3>
+          <ul id="insightsList" class="insight-list"></ul>
+        </section>
+
+        <section class="subcard">
+          <h3>Сводка по расходам</h3>
+          <div id="expenseBreakdown" class="expense-breakdown"></div>
+
+          <div class="divider"></div>
+
+          <h3>Слабые товары</h3>
+          <div id="weakProducts" class="weak-products"></div>
+        </section>
+      </div>
+
+      <div class="table-head">
+        <div>
+          <h3>Сводка по товарам</h3>
+          <p id="tableNote" class="section-note"></p>
+        </div>
+        <div class="search-wrap">
+          <input id="resultsProductSearch" type="search" placeholder="Фильтр по SKU или товару" />
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table" id="productTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="bottom-grid">
+      <section class="card section-card">
+        <div class="section-head section-head--compact">
+          <div>
+            <div class="section-eyebrow">Примечания</div>
+            <h2>Ограничения анализа</h2>
+          </div>
+        </div>
+        <div id="limitationsBlock" class="note-list"></div>
+      </section>
+
+      <section class="card section-card">
+        <div class="section-head section-head--compact">
+          <div>
+            <div class="section-eyebrow">Почему это должно работать стабильнее</div>
+            <h2>Что изменилось в импорте</h2>
+          </div>
+        </div>
+        <ul class="roadmap-list">
+          <li>Больше нет зависимости от браузерного чтения xlsx/xls.</li>
+          <li>Служебные строки и нестандартные шапки отчётов Ozon обрабатываются на основе вставленного диапазона.</li>
+          <li>Для позаказного отчёта поддержана составная шапка из нескольких строк.</li>
+          <li>Все вычисления по-прежнему идут локально, без сервера и без отправки данных наружу.</li>
+          <li>После стабилизации Ozon эту же механику можно перенести на Wildberries.</li>
+        </ul>
+      </section>
+    </footer>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
